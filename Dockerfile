@@ -32,9 +32,14 @@ RUN echo "export {};" >> index.ts
 
 # Copy files necessary for installing the dependencies
 # Root
+COPY .yarn/ .yarn/
+COPY .yarnrc.yml .yarnrc.yml
+COPY .yarn/ .yarn/
+
 COPY .env \
      lerna.json \
      package.json \
+     jest.config.base.js \
      rollup.config.base.js \
      tsconfig.base.json \
      tsconfig.base.cjs.json \
@@ -139,7 +144,11 @@ RUN rm index.ts
 # Install external dependencies
 # In order to save some time, we install the external dependencies first
 # And later we rebuild everything
-RUN SKIP_GEN_VERSION=1 yarn install --pure-lockfile
+RUN corepack enable
+# RUN yarn patch jsdom --update
+# RUN yarn patch jsdom
+RUN SKIP_GEN_VERSION=1 yarn install --json
+# RUN SKIP_GEN_VERSION=1 yarn install --immutable
 
 # Add the rest of the files necessary for internal dependencies
 # Demo
@@ -152,6 +161,8 @@ COPY ${DEMO_PACKAGES_PATH}/ \
 
 # Build the packages
 RUN yarn clean
+RUN yarn add tslib
+RUN yarn add -D jest @types/jest ts-jest
 RUN yarn build
 
 # Expose the ports
